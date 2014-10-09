@@ -109,11 +109,12 @@ class FollowLog(object):
             self._following[twitter_id] = self._empty_row(twitter_id)
         return self._following[twitter_id]
 
-    def save_follow(self, twitter_id, reason=None):
+    def save_follow(self, twitter_id, reason=None, screen_name=None):
         entry = self._get_or_create(twitter_id)
 
         entry['follow_datetime'] = datetime.datetime.now()
         entry['follow_reason'] = reason
+        entry['screen_name'] = screen_name
 
     def save_unfollow(self, twitter_id):
         entry = self._get_or_create(twitter_id)
@@ -208,7 +209,8 @@ def auto_follow(q, count=100, result_type="recent"):
     with get_follow_log() as follow_log:
         for twitter_id in to_follow:
             _follow(follow_log, twitter_id,
-                    'Tweet: `{}`'.format(tweet['text']))
+                    'Tweet: `{}`'.format(tweet['text']),
+                    screen_name=tweet['user']['screen_name'])
 
 
 def auto_follow_followers():
@@ -267,7 +269,7 @@ def auto_unfollow_nonfollowers():
             print("unfollowed %d" % (user_id))
 
 
-def _follow(follow_log, twitter_id, reason=None):
+def _follow(follow_log, twitter_id, reason=None, screen_name=None):
     print(twitter_id)
     try:
         t.friendships.create(user_id=twitter_id, follow=True)
@@ -279,4 +281,4 @@ def _follow(follow_log, twitter_id, reason=None):
             logging.info('Ignoring "blocked" exception')
             logging.exception(e)
     else:
-        follow_log.save_follow(twitter_id, reason)
+        follow_log.save_follow(twitter_id, reason, screen_name)
