@@ -19,7 +19,7 @@ the Twitter Follow Bot library. If not, see http://www.gnu.org/licenses/.
 
 from __future__ import unicode_literals
 
-import csv
+import unicodecsv
 import datetime
 
 from collections import OrderedDict
@@ -91,12 +91,12 @@ class FollowLog(object):
         with open(self.FOLLOW_LOG, 'r') as f:
             self._following = OrderedDict(
                 [(int(row['twitter_id']), self._deserialize_row(row))
-                 for row in csv.DictReader(f)])
+                 for row in unicodecsv.DictReader(f)])
 
     def _save_to_csv(self):
         tmp_filename = self.FOLLOW_LOG + '.tmp'
         with open(tmp_filename, 'w') as f:
-            writer = csv.DictWriter(f, self.FOLLOW_LOG_FIELDS)
+            writer = unicodecsv.DictWriter(f, self.FOLLOW_LOG_FIELDS)
             writer.writeheader()
             for twitter_id, row in self._following.items():
                 row['twitter_id'] = twitter_id
