@@ -1,2 +1,2 @@
-twitter==1.15.0
+twitter==1.16.0
 pytz==2014.10
