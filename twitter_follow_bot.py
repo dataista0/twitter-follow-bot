@@ -54,6 +54,8 @@ class FollowLog(object):
     FOLLOW_LOG_FIELDS = ('twitter_id', 'screen_name', 'follow_datetime',
                          'unfollow_datetime', 'follow_reason')
 
+    DATETIME_FIELDS = ('follow_datetime', 'unfollow_datetime')
+
     def __init__(self):
         self._following = OrderedDict()
 
@@ -65,14 +67,20 @@ class FollowLog(object):
 
     @staticmethod
     def _serialize_row(row):
-        row['follow_datetime'] = row['follow_datetime'].strftime(
-            DATETIME_FORMAT)
+        for field in FollowLog.DATETIME_FIELDS:
+            if row[field]:
+                row[field] = row[field].strftime(DATETIME_FORMAT)
+
         return row
 
     @staticmethod
     def _deserialize_row(row):
-        row['follow_datetime'] = datetime.datetime.strptime(
-            row['follow_datetime'], DATETIME_FORMAT)
+
+        for field in FollowLog.DATETIME_FIELDS:
+            if row[field]:
+                row[field] = datetime.datetime.strptime(
+                    row[field], DATETIME_FORMAT)
+
         return row
 
     def __enter__(self):
@@ -247,24 +255,15 @@ def auto_unfollow_nonfollowers():
         with open(ALREADY_FOLLOWED_FILE, "w") as out_file:
             out_file.write("")
 
-    # update the "already followed" file with users who didn't follow back
-    already_followed = set(not_following_back)
-    af_list = []
-    with open(ALREADY_FOLLOWED_FILE) as in_file:
-        for line in in_file:
-            af_list.append(int(line))
+    with get_follow_log() as follow_log:
+        for twitter_id in not_following_back - users_keep_following:
+            if follow_log.have_followed_before(twitter_id):
+                print('Unfollowing {}'.format(twitter_id))
 
-    already_followed.update(set(af_list))
-    del af_list
-
-    with open(ALREADY_FOLLOWED_FILE, "w") as out_file:
-        for val in already_followed:
-            out_file.write(str(val) + "\n")
-
-    for user_id in not_following_back:
-        if user_id not in users_keep_following:
-            t.friendships.destroy(user_id=user_id)
-            print("unfollowed %d" % (user_id))
+                _unfollow(follow_log, twitter_id)
+            else:
+                print("I didn't follow {}, so won't unfollow".format(
+                    twitter_id))
 
 
 def _follow(follow_log, twitter_id, reason=None):
@@ -280,3 +279,12 @@ def _follow(follow_log, twitter_id, reason=None):
             logging.exception(e)
     else:
         follow_log.save_follow(twitter_id, reason)
+
+
+def _unfollow(follow_log, twitter_id):
+    try:
+        t.friendships.destroy(user_id=twitter_id)
+    except TwitterHTTPError as e:
+        logging.exception(e)
+    else:
+        follow_log.save_unfollow(twitter_id)
