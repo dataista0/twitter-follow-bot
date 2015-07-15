@@ -7,7 +7,7 @@ import sys
 
 from os.path import dirname, join as pjoin
 
-from twitter_follow_bot import auto_follow
+from twitter_follow_bot import auto_follow, auto_follow_followers
 
 
 def job_valid_now(job):
@@ -30,6 +30,7 @@ def run_job(job):
 
 
 def main():
+    auto_follow_followers()
     with open(pjoin(dirname(__file__), 'schedule.csv'), 'r') as f:
         for row in csv.DictReader(f):
             if job_valid_now(row):

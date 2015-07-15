@@ -229,11 +229,9 @@ def auto_follow_followers():
 
     not_following_back = followers - following
 
-    for user_id in not_following_back:
-        try:
-            t.friendships.create(user_id=user_id, follow=True)
-        except Exception as e:
-            print("error: %s" % (str(e)))
+    with get_follow_log() as follow_log:
+        for twitter_id in not_following_back:
+            _follow(follow_log, twitter_id, 'Following back user')
 
 
 def auto_unfollow_nonfollowers():
