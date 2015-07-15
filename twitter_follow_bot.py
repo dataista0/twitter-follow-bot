@@ -274,7 +274,7 @@ def _follow(follow_log, twitter_id, reason=None):
             # "message":"You have been blocked from following this account
             # at the request of the user."}]}
             logging.info('Ignoring "blocked" exception')
-            logging.exception(e)
+        logging.exception(e)
     else:
         follow_log.save_follow(twitter_id, reason)
 
